@@ -1,0 +1,283 @@
+<div>
+<script>
+	function bind_object(id)
+	{
+		\$("#"+id).autocomplete("/purchasemanager/supplier_master/find",{extraParams:{"is a":"item master","keyname":"item description"},autoFill:true});
+		\$("#"+id).focus(function(){\$("#"+id).removeClass();\$("#"+id).addClass("ac_input selected");});
+		\$("#"+id).blur(function(){\$("#"+id).removeClass();\$("#"+id).addClass("ac_input");});
+	}
+</script>
+	#include "../purchasemanager/heading.tmpl"
+	<form id="wo_form">
+	<table width="100%" border="0" style="background:url('/purchasemanager/resources/images/bar.png');position:relative;height:35px">
+		<tr>
+			<td style="padding-left:0.5em;padding-top:0em;padding-bottom:0em;" align="left">
+				#if $mode != "create":
+					#if $view_mode !='true':
+						<input type="button"  style="width:7em" value="Update" title="Upadte Work Order"  onclick="javascript:update_wo(this, '$wo_uuid');"/>
+					#end if
+				#else:
+					<input type="button"  style="width:7em" value="Save" title="Save New Work Order"  onclick="javascript:save_wo(this);"/>
+				#end if
+				#if $wo_data.get('wo_no'):
+					#if $mode != "create":
+							<input type="button" id="prev" style="width:7em" value="Prev" title="Prev Item Master" onclick="javascript:next_prev_wo('$wo_data.get('wo_no')', '$view_mode',  'prev')"/>
+							<input type="button" id="next" style="width:7em" value="Next" title="Next Item Master" onclick="javascript:next_prev_wo('$wo_data.get('wo_no')', '$view_mode',  'next')"/>	
+						
+					#else:
+						<input type="button" disabled="disabled" id="Prev" style="width:7em" value="Prev" title="Prev Item Master"/>
+						<input type="button" disabled="disabled" id="Next" style="width:7em" value="Next" title="Next Item Master"/>	
+					#end if
+				#end if
+				<input type="button" id="cancel_wo" style="width:7em" title="Show Search Option" value="Cancel" onclick="javascript:work_order_grid();"/>
+			
+			</td>
+			
+		</tr>
+	</table>
+	<table border="0" width="100%">
+		<tr>
+			<td style="padding-top:0em;font-size:35;background-color:">				
+				<table id="wo_table" width="100%" border='1'>
+					<!--   This is enable in view or edit mode   -->
+					#if $mode != "create":
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">Work Order No *</label> </td>
+						<td> <input  type="text" name="wo_no" id="wo_no" disabled="true" value="$wo_data.get('wo_no', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Work Order Date *</label> </td>
+						<td>
+							<input  type="text" name="wo_no" id="wo_no" disabled="true" value="$wo_data.get('wo_date', '')" />
+							##$widgets.datepicker_tag("wo_date", **{"type":"text", "name":"wo_date", "style":"width:8.5em;", "dateformat":"yy-mm-dd","value":$wo_data.get('wo_date', '')})
+						</td>
+						<td> <label style="text-align:center;width:8.5em">Outward Gate Pass No *</label> </td>
+						<td> <input  type="text" disabled="true" name="out_gate_pass_no" id="out_gate_pass_no" value="$wo_data.get('out_gate_pass_no', '')" /> </td>
+					</tr>
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">Bill No</label> </td>
+						<td> <input  disabled="true" type="text" name="bill_no" id="bill_no" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Bill Date</label> </td>
+						<td> <input disabled="true"  type="text" name="bill_date" id="bill_date" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Amount</label> </td>
+						<td> <input disabled="true" type="text" name="amount" id="amount" /> </td>
+					</tr>
+					#end if
+					<!--    END EDIT OR VIEW MODE     -->
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">RC No</label> </td>
+						<td> 
+							<input  type="text" disabled="true" name="rc_no" id="rc_no" value="$wo_data.get('rc_nrc_no', '')" /> 
+							<select id="t_rc" name="t_rc" onchange="rc_no_details(this.value, this);" style="width:2em">
+								<option></option>
+								#for $no in $rc_no:
+									<option>$no</option>
+								#end for
+							</select>
+						</td>
+						
+						<td> <label style="text-align:center;width:8.5em">RC Date</label> </td>
+						##<td> <input  type="text" disabled="true" name="rc_date" id="rc_date" value="$wo_data.get('rc_date', '')" /> </td>
+						<td> $widgets.datepicker_tag("rc_date", **{"type":"text", "name":"rc_date", "disabled":"true", "style":"width:12.5em;", "dateformat":"yy-mm-dd", "value":$wo_data.get('rc_date', '')}) </td>
+						<td> <label style="text-align:center;width:8.5em">Vendor Name</label> </td>
+						<td> 
+							##<input  type="text" name="vendor_name" id="vendor_name" value="$wo_data.get('vendor_name', '')" /> 
+							$widgets.input_tag(style="width:12.5em", id="vendor_name", name="vendor_name", onblur="javascript:vendor_details(this.value);", value=$wo_data.get('vendor_name', ''), autocomplete="/hartex/requisitions/find", autocomplete_options={"extraParams":{'is a':'vendor_master','keyname':'vendor_name'}},   title="Add Vendor")
+						</td>
+					</tr>
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">Payment Mode</label> </td>
+						<td> <input  type="text" name="payment_mode" id="payment_mode" value="$wo_data.get('payment_mode', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Payment Terms</label> </td>
+						<td> <input  type="text" name="payment_terms" id="payment_terms" value="$wo_data.get('payment_terms', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Vendor Code</label> </td>
+						<td> <input  type="text" disabled="true" name="vendor_code" id="vendor_code" value="$wo_data.get('vendor_code', '')" /> </td>
+					</tr>
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">Employee in charge</label> </td>
+						<td> <input  type="text" disabled="true" name="employee_name" id="employee_name" value="$wo_data.get('employee_name', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Return before</label> </td>
+						##<td> <input  type="text" name="return_before" id="return_before" value="$wo_data.get('return_before', '')" /> </td>
+						<td> $widgets.datepicker_tag("return_before", **{"type":"text", "readonly":"true", "name":"return_before", "style":"width:12.5em;", "dateformat":"yy-mm-dd", "value":$wo_data.get('return_before', '')}) </td>
+						<td> <label style="text-align:center;width:8.5em">WO Value</label> </td>
+						<td> <input  type="text" readonly="true" name="wo_value" id="wo_value" value="$wo_data.get('wo_value', '')" /> </td>
+					</tr>
+					
+					<tr>
+						<td> <label style="text-align:center;width:8.5em">Department</label> </td>
+						<td> <input  type="text" disabled="true" name="department" id="department" value="$wo_data.get('department', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Cost Centre</label> </td>
+						<td> <input  type="text" disabled="true" name="cost_centre" id="cost_centre" value="$wo_data.get('cost_centre', '')" /> </td>
+						<td> <label style="text-align:center;width:8.5em">Section</label> </td>
+						<td> <input  type="text" disabled="true" name="section" id="section" value="$wo_data.get('section', '')" /> </td>
+					</tr> 
+
+					## ~~~~~~~~~~ START ~~~~~~~~~~~~~~~~~~~~
+					<tr>
+						<td colspan="4" valign="top">  
+							<div id="rc_item_details" valign="top">
+								<div>
+									<table border="1" id="rc_issue_items" width="100%" align="left" valign="top" height="100%">
+										<tr>	
+											<td  colspan='7'>
+												<boxtitle style="text-align:center;font-size:13px" title="Outward Materials" />
+											</td>
+										</tr>
+										<tr bgcolor="gray">
+											<th>
+												<label style="text-align:center;color:white">Material Type</label>
+											</th>							
+											<th>
+												<label style="text-align:center;color:white">Item Code</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white">Item Name</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Item UOM</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Qty.</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Rate.</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Value</label>
+											</th>
+										</tr>	
+										#for $d in $data.get('issue_materials',[{}])			
+										<tr bgcolor="#F9FFDF">
+											<td style="padding:0px;" align="center">
+												<input style="width:7.5em" type="text" disabled="true" value="$d.get('issue_material_type', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input style="width:7.5em" type="text" disabled="true" value="$d.get('issue_item_code', '')" />
+											</td>							
+											<td style="padding:0px;" align="center">
+												<input  style="width:7.5em"  type="text" disabled="true" value="$d.get('issue_item_name', '')" />
+											</td>										
+											<td style="padding:0px;" align="center">
+												<input  style="width:4.5em" type="text" disabled="true" value="$d.get('issue_uom', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input  style="width:4.5em" type="text" disabled="true" id="qty" name="issue_qty"  value="${d.get('issue_qty', '')}" />								
+											</td>
+											<td style="padding:0px;" align="center">
+												<input  style="width:5.5em" type="text"  id="rate" name="rate" onblur="find_wo_value('rc_issue_items', this, this.value);" value="${d.get('rate', '')}" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input  style="width:5.5em"  type="text" readonly="true" id="value" name="value"  value="${d.get('value', '')}" />
+												<input  type="hidden"  id="issue_uuid" name="issue_uuid" value="$d.get('issue_uuid', '')" />
+											</td>
+										</tr>
+										#end for
+									</table>
+									<br />
+									<br />
+									<br />
+									<table border="1" id="rc_mat_items" width="100%" align="left" height="100%">
+										<tr>	
+											<td  colspan='7' >
+												<boxtitle style="text-align:center;font-size:13px" title="Inward Materials" />
+											</td>
+										</tr>
+										<tr bgcolor="gray">
+											<th>
+												<label style="text-align:center;color:white">Material Type</label>
+											</th>						
+											<th>
+												<label style="text-align:center;color:white">Item Code</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white">Item Name</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Item UOM</label>
+											</th>
+											<th>
+												<label style="text-align:center;color:white"> Qty.</label>
+											</th>						
+										</tr>			
+										#for $d in $data.get('return_materials', [{}])
+										<tr bgcolor="#F9FFDF">
+											<td style="padding:0px;" align="center">
+												<input style="width:8.5em" type="text" disabled="true" value="$d.get('return_material_type', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input style="width:8.5em" type="text" disabled="true" value="$d.get('return_item_code', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input style="width:8.5em" type="text" disabled="true" value="$d.get('return_item_name', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input style="width:8.5em" type="text" disabled="true" value="$d.get('return_uom', '')" />
+											</td>
+											<td style="padding:0px;" align="center">
+												<input style="width:8.5em" type="text" disabled="true" value="$d.get('return_qty', '')" />
+												
+											</td>
+										</tr>
+										#end for
+									</table>
+								</div>
+							</div>
+						</td>
+						<td colspan="2"  valign="top">
+							<div style="height:224px;text-align:left;height:;overflow-y:scroll;">
+							<table border="1"  id="job_description" name="job_description" width="100%" align="right" valign="top">
+								<tr>	
+									<td  colspan='6' >
+										<boxtitle style="text-align:center;font-size:13px" title="Job Description" />
+									</td>
+								</tr>
+								<tr bgcolor="gray">
+									<th>
+										<label style="text-align:center;color:white">Description</label>
+									</th>
+									<th>
+										<label style="text-align:center;color:white">Qty</label>
+									</th>									
+									<th>
+										<label style="text-align:center;color:white">Rate</label>
+									</th>
+									<th colspan="3">
+										<label style="text-align:center;color:white">Value</label>
+									</th>
+								</tr>
+								#for $d in $wo_data.get('job_description', [{}])
+								<tr bgcolor="#F9FFDF">
+									<td style="padding:0px;" align="center">
+										<input style="width:12.5em" type="text" value="$d.get('job_desc', '')" name="job_desc" id="job_desc"  />
+									</td>
+									<td style="padding:0px;" align="center">
+										<input style="width:5.5em" type="text" value="$d.get('job_qty', '')" onblur="javascript:work_job_description_value();" name="job_qty" id="job_qty" />
+									</td>
+									<td style="padding:0px;" align="center">
+										<input style="width:5.5em" type="text" value="$d.get('job_rate', '')"  onblur="javascript:work_job_description_value();" name="job_rate" id="job_rate" />
+									</td>							
+									<td style="padding:0px;" align="center">
+										<input  style="width:5.5em" readonly="true" value="$d.get('job_value', '')" type="text" name="job_value" id="job_value" />
+									</td>
+									<td style="padding:0px;border:0px;">
+										<label style="padding:0px;">
+										<img id="delete_image" src='/qatech/resources/images/add.png' title="click to add row" onclick="javascript:addrow_inhartex(this.parentNode.parentNode.parentNode.parentNode,'plus','last','2')"/>
+										</label>
+									</td>
+									<td style="padding:0px;border:0px;">
+										<label style="padding:0px;">
+										<img id="delete_image" src='/qatech/resources/images/delete1.png' title="click to delete row" onclick="javascript:delete_row(this.parentNode.parentNode.parentNode,'3')"/>
+									</label>
+									</td>
+								</tr>
+								#end for
+							</table>
+							</div>
+						</td>
+					</tr>
+					## ~~~~~~~~~~~~~  END ~~~~~~~~~~~~~~~~~
+				</table>
+				
+			</td>		
+		</tr>						
+	</table>
+	</form>	
+</div>

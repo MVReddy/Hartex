@@ -1,0 +1,332 @@
+## This tmpl is taking data from user  for irv
+#import cgi
+#import time
+<div>
+	##<link rel="stylesheet" href="/hartex/resources/transcations.css" type="text/css"/>
+	<table width="100%" cellspacing="0" border="0">
+		<tr style="background:url('/hartex/resources/images/header1.png');height:50px">
+			<td width="100%" height="45px" align="left">
+				<button style="padding:1pt" onclick='javascript:toggle("nav_pane","contain_pane")'><img id="toggle_image" src='/hartex/resources/images/right-arrow.png' /></button>
+				<label align="right" style="margin-top:2em;font-size:14;font-weight:bold;text-align:right">Issue Return voucher</label>
+			</td>
+		</tr>
+	</table>
+	
+<form  method="post" name='irv_master' id="irv_master">	
+	<table  width="100%">
+		<tr id="colorrow" style="height:3.5em;background-color:#666666;">
+			<td width="50%" style="cursor:hand;padding-left:0.5em;padding-top:0pt;padding-bottom:0em;" >
+				#if not $irv_no
+					<input type="button" id="save" name="save" title='click to save this record' style="cursor:hand;" value="Save" onclick="javascript:save_irv(this,'$current_department')"/>	
+					<input type="button" disabled="disabled" id="update" name="update" title='click to update this record' style="cursor:hand;" value="Update"/>	
+				#else:
+					<input type="button" disabled="disabled" id="save" name="save" title='click to save this record' style="cursor:hand;" value="Save"/>
+					
+					#if $view_mode == 'false':
+						#if $irv_data.get('confirm_mode', '') == 'confirm':
+							<input type="button" id="confirm" name="confirm" title='click to update this record' style="cursor:hand;" value="Confirm" onclick="javascript:confirm_irv_data(this,'$current_department', '$cgi.escape($irv_data.get('irv_uuid', ''), quote=True)', '$view_mode', '$irv_data.get('confirm_mode', '')');"/>	
+						#else
+							<input type="button" id="update" name="update" title='click to update this record' style="cursor:hand;" value="Update" onclick="javascript:update_irv(this,'$current_department', '$cgi.escape($irv_data.get('irv_uuid', ''), quote=True)', '$view_mode')"/>	
+						#end if
+					#else
+						#if $irv_data.get('confirm_mode', '') == 'confirm':
+							<input type="button" id="confirm"  disabled="disabled" name="confirm" title='click to update this record' style="cursor:hand;" value="Confirm"/>	
+						#else
+							<input type="button" disabled="disabled" id="update" name="update" title='click to update this record' style="cursor:hand;" value="Update"/>	
+						#end if
+					#end if
+				#end if
+				#if $irv_no
+					##if $irv_data.get('confirm_mode') != 'confirm':
+						<input type="button" id="prev" style="width:7em" value="Prev" title="Prev Item Master" onclick="javascript:next_prev_irv('$irv_no', '$view_mode', '$current_department', 'prev', '$irv_data.get('confirm_mode', '')')"/>
+						<input type="button" id="next" style="width:7em" value="Next" title="Next Item Master" onclick="javascript:next_prev_irv('$irv_no', '$view_mode', '$current_department', 'next', '$irv_data.get('confirm_mode', '')')"/>	
+					##end if
+				#else:
+					<input type="button" disabled="disabled" id="Prev" style="width:7em" value="Prev" title="Prev Item Master"/>
+					<input type="button" disabled="disabled" id="Next" style="width:7em" value="Next" title="Next Item Master"/>	
+				#end if
+				#if $irv_data.get('confirm_mode') == 'confirm':
+					<input type="button" id="cancel" name="cancel" style="cursor:hand;" value="Cancel" onclick='confirm_irv_display("container_pane","$current_department");'/>
+				#else
+					<input type="button" id="cancel" name="cancel" style="cursor:hand;" value="Cancel" onclick='irv_display("container_pane","$current_department");'/>
+				#end if
+			</td>
+		</tr>
+		<tr>
+			<td style="padding-top:0em;font-size:35;background-color:">
+				<div id="irv_items_data">
+				<table width="100%" border='1'>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">Irv No</label></td>
+							<label>
+								<input  type="text"  readonly="true" value="$irv_no" name="irv_no" id="irv_no" style="text-align:center;width:14.5em"/>
+							</label>
+						<td><label style="text-align:center;width:8.5em">Irv Date *</label></td>
+							<label><input  type="text"  readonly="true" value='$time.strftime("%Y-%m-%d")' name="irv_date" id="irv_date" style="text-align:center;width:8.5em"/></label>
+						<td><label style="text-align:center;width:8.5em">Confirm</label></td>
+						<td>
+							<label>Yes<input  type="radio"  disabled="true" value="yes" name="confirm_irv" id="confirm_irv"/></label>
+							<label>No<input  type="radio"  disabled="true" value="no" name="confirm_irv" id="confirm_irv"/></label>
+						</td>
+					</tr>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">Department code *</label></td>
+							<label style="text-align:center;width:4.5em">
+								<input  type="text"  readonly="true" style="width:4.5em;" value="$cgi.escape($irv_data.get('department_code', $current_department_code), quote=True)" name="department_code" id="department_code"/>
+							</label>
+							<label style="text-align:center;width:8.5em">
+							<select name="department_select" id="department_select" onchange="javascript:department_data('irv_master',this.value);">
+							#for $department in $department_select:
+								#if $department.lower() == $current_department.lower():
+									<option selected="selected" >$department</option>
+								#else:
+									<option>$department</option>
+								#end if
+							#end for					
+							</select>
+						</label>
+						
+						<td><label style="text-align:center;width:8.5em">Cost Centre</label></td>
+							<label style="text-align:center;width:4.5em">
+								<input  type="text" readonly="true"  style="width:4.5em;" name="cost_code" id="cost_code" value="$cgi.escape($irv_data.get('cost_code', ''), quote=True)"/>
+							</label>
+							<label style="text-align:center;width:8.5em">
+							$widgets.input_tag(id="cost_select", name="cost_select", value=$cgi.escape($irv_data.get('cost_select', ''), quote=True), onblur="cost_equipment_section_code_irv('cost_centre_code', this.value,this,'$current_department');", autocomplete="/hartex/irv/find", autocomplete_options={"extraParams":{'is a':'cost_centre','keyname':'cost_centre_description'}},   title="Add cost centre description")
+						</label>
+						<td><label style="text-align:left">Section</label></td>										
+							<label style="text-align:center;width:4.5em">
+								<input  type="text" readonly="true" style="width:4.5em;" value="$cgi.escape($irv_data.get('section_code', ''), quote=True)" name="section_code" id="section_code"/>
+							</label>
+							<label style="text-align:center;width:8.5em">
+							<select style="width:8.5em;" name="section_select" id="section_select" onchange="javascript:cost_equipment_section_code_irv('section_code',this.value,this,'$current_department');">
+							<option></option>
+							#for $section in $section_select:
+								#if $cgi.escape($irv_data.get('section_select', ''), quote=True) == $section:
+									<option selected="selected">$section</option>
+								#else:
+									<option>$section</option>
+								#end if
+							#end for					
+							</select>
+						</label>
+					</tr>
+					<tr> #*********************************
+						<td><label style="text-align:center;width:8.5em">Material Type</label></td>
+							<select id="material_type" name="material_type" style="font-size:12px;width:13.5em" onchange="javascript:get_item_code_basedon_material_irv(this.value,this.parentNode.parentNode);">
+								<option></option>
+								#for $material in $material_type:
+									#if $material == $cgi.escape($irv_data.get('material_type', ''), quote=True)
+										<option selected="selected">$cgi.escape($material, quote=True)</option>
+									#else:
+										<option>$cgi.escape($material, quote=True)</option>
+									#end if
+								#end for
+							</select>
+						<td>
+							<label style="text-align:center;width:1.5em">Item Code
+								
+							</label>
+						</td>
+							<label style="text-align:center;width:5.5em">
+								
+								#if $irv_data.get('item_code'):
+									<select style="width:13em;" name="item_code" id="item_code" onchange="javascript:get_item_name_details_irv(this.value,this.parentNode.parentNode.parentNode);">
+									<option selected="selected">$irv_data.get('item_code')</option>
+								#else:
+									<select style="width:13em;" disabled="true" name="item_code" id="item_code" onchange="javascript:get_item_name_details_irv(this.value,this.parentNode.parentNode.parentNode);">
+									<option></option>
+								#end if 
+								<option></option>
+								#for $code in $item_code:
+									<option>$code</option>
+								#end for					
+								</select>
+							</label>
+						<td><label style="text-align:center;width:8.5em">Item </label></td>
+							$widgets.input_tag(id="item_desc_id-0", value=$cgi.escape($irv_data.get('item_name', ''), quote=True), onblur="javascript:get_item_code_details_irv(this.parentNode.parentNode.parentNode);", name="item_name", autocomplete="/hartex/irv/find", autocomplete_options={"extraParams":{'is a':'item master','keyname':'item description'}},   title="Add Item in Item Master")
+							*****************************#
+
+
+
+					<td><label style="text-align:center;width:8.5em">Item name</label></td>
+						#if $irv_data.get('item_name'):
+							<td><input  type="text" style="width:13em;" readonly="true" value ="$irv_data.get('item_name')" name="item_name" id="item_name"/></td>
+
+						#else:	
+						<td>	$widgets.input_tag(id="item_desc_id-0", style="width:8.5em;", name="item_name", autocomplete="/hartex/irv/find", autocomplete_options={"extraParams":{'is a':'item master','keyname':'item description'}}, onblur="javascript:get_item_name_details_2(this.parentNode.parentNode.parentNode,this.value);", title="Get Item from Item Master")</td>
+
+						#end if
+
+
+					<td><label style="text-align:center;width:1.5em">Item code </label></td>
+						#if $irv_data.get('item_code'):
+							<td><input  type="text" style="width:13em;" readonly="true" value ="$irv_data.get('item_code')" name="item_code" id="item_code"/></td>
+
+						#else:
+								<td> $widgets.input_tag(id="item_code", style="width:6.5em;", name="item_code", autocomplete="/hartex/irv/find", autocomplete_options={"extraParams":{'is a':'item master','keyname':'item code'}}, onblur="javascript:get_item_name_details_3(this.value,this.parentNode.parentNode.parentNode);javascript:get_availability_itemcode(this.value);", title="Get Item from Item Master")</td>
+						#end if
+							<td><label style="text-align:center;width:8.5em">Material Type</label></td>
+						#if $irv_data.get('material_type'):
+						
+							<td><input  type="text" style="width:13em;" readonly="true" value ="$irv_data.get('material_type')" name="material_type" id="material_type"/></td>
+						#else:
+							<td><input  type="text" style="width:13em;" readonly="true" name="material_type" id="material_type"/></td>
+						#end if
+					</tr>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">Irv Qty</label></td>
+						<td>
+							<label>
+								<input  type="text" value="$cgi.escape($irv_data.get('irv_qty', ''), quote=True)" style="width:4.5em;" name="irv_qty" id="irv_qty"/>
+							</label>
+							<label>
+								<input  type="text" style="width:4.5em;" readonly="readonly" value="$cgi.escape($irv_data.get('item_uom', ''), quote=True)" name="item_uom" id="item_uom"/>
+							</label>
+						</td>
+						<td><label style="text-align:center;width:8.5em">Make</label></td>
+						<td style="padding:0px;">
+							<input  type='text' value="$cgi.escape($irv_data.get('irv_make', ''), quote=True)" name="irv_make" id="irv_make" style="border:0px;width:8.5em"/>
+						</td>
+						<td><label style="text-align:center;width:8.5em">Specifications</label></td>
+						<td style="padding:0px;">
+							<input  type='text' value="$cgi.escape($irv_data.get('irv_specifications', ''), quote=True)" name="irv_specifications" id="irv_specifications" style="border:0px;width:8.5em"/>
+						</td>	
+					</tr>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">Return Class</label></td>
+						<td>
+							<label style="text-align:center;width:5.5em">
+								<select style="width:13em;" name="return_class" id="return_class" onchange="javascript:get_return_class(this,this.value);">
+									<option></option>
+									#if $cgi.escape($irv_data.get('return_class', ''), quote=True) == "Repairs":
+										<option selected="selected">Repairs</option>
+										<option>Plant Returns</option>
+										<option>Internal</option>
+									#elif $cgi.escape($irv_data.get('return_class', ''), quote=True) == "Plant Returns":
+										<option>Repairs</option>
+										<option selected="selected">Plant Returns</option>
+										<option>Internal</option>
+									#elif $cgi.escape($irv_data.get('return_class', ''), quote=True) == "Internal":
+										<option>Repairs</option>
+										<option>Plant Returns</option>
+										<option selected="selected">Internal</option>
+										
+									#else:
+										<option>Repairs</option>
+										<option>Plant Returns</option>
+										<option>Internal</option>
+									#end if
+								</select>
+							</label>
+						</td>
+					
+					#if $current_department == "Purchase":
+						<td><label style="text-align:center;width:8.5em">Create RC</label></td>
+						<td>
+							#if $irv_data.get('confirm_mode') == 'confirm':
+								#if $irv_data.get('create_rc') == 'yes':
+									<label>Yes<input  type="radio" checked="True"  value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio"  value="no" name="create_rc" id="create_rc"/></label>
+								#elif $irv_data.get('create_rc') == 'no':
+									<label>Yes<input  type="radio"  value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio" checked="True"  value="no" name="create_rc" id="create_rc"/></label>
+								#else:
+									<label>Yes<input  type="radio" value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio"  value="no" name="create_rc" id="create_rc"/></label>
+								#end if
+							#else:
+								#if $irv_data.get('create_rc') == 'yes':
+									<label>Yes<input  type="radio" checked="True" disabled="true" value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_rc" id="create_rc"/></label>
+								#elif $irv_data.get('create_rc') == 'no':
+									<label>Yes<input  type="radio" disabled="true" value="ye#if $irv_data.get('item_code'):s" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio" checked="True" disabled="true" value="no" name="create_rc" id="create_rc"/></label>
+								#else:
+									<label>Yes<input  type="radio" disabled="true" value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_rc" id="create_rc"/></label>
+								#end if
+							#end if
+						</td>
+						<td><label style="text-align:center;width:8.5em">Create Work Order</label></td>
+						<td>
+							
+							#if $irv_data.get('confirm_mode') == 'confirm':
+								#if $irv_data.get('create_rc') == 'yes':
+									<label>Yes<input  type="radio" checked="True"  value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio"  value="no" name="create_wo" id="create_wo"/></label>
+								#elif $irv_data.get('create_rc') == 'no':
+									<label>Yes<input  type="radio"  value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio" checked="True"  value="no" name="create_wo" id="create_wo"/></label>
+								#else:
+									<label>Yes<input  type="radio" value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio"  value="no" name="create_wo" id="create_wo"/></label>
+								#end if
+							#else:
+								#if $irv_data.get('create_rc') == 'yes':
+									<label>Yes<input  type="radio" checked="True" disabled="true" value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_wo" id="create_wo"/></label>
+								#elif $irv_data.get('create_rc') == 'no':
+									<label>Yes<input  type="radio" disabled="true" value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio" checked="True" disabled="true" value="no" name="create_wo" id="create_wo"/></label>
+								#else:
+									<label>Yes<input  type="radio" disabled="true" value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_wo" id="create_wo"/></label>
+								#end if
+							#end if
+						</td>
+					#else:
+						<td><label style="text-align:center;width:8.5em">Create RC</label></td>
+						<td>
+							
+									<label>Yes<input  type="radio" disabled="true" value="yes" name="create_rc" id="create_rc"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_rc" id="create_rc"/></label>
+								
+						</td>
+						<td><label style="text-align:center;width:8.5em">Create Work Order</label></td>
+						<td> 
+									<label>Yes<input  type="radio" disabled="true" value="yes" name="create_wo" id="create_wo"/></label>
+									<label>No<input  type="radio" disabled="true" value="no" name="create_wo" id="create_wo"/></label>
+								
+						</td>
+					#end if
+						##<td><label style="text-align:center;width:8.5em"></label></td>
+						##<td style="padding:0px;">
+							##<input  type='text' name="irv_specifications" id="irv_specifications" style="border:0px;width:8.5em"/>
+						##</td>	
+					</tr>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">RC/NRC No</label></td>
+						<td>
+							<label style="text-align:center;width:5.5em">
+								<input  type='text' disabled="true" name="rc_nrc_no" id="rc_nrc_no" style="border:0px;width:8.5em"/>
+							</label>
+						</td>
+						<td><label style="text-align:center;width:8.5em">Work Order No</label></td>
+						<td>
+							<input  type='text' disabled="true" name="wo_no" id="wo_no" style="border:0px;width:8.5em"/>
+						</td>
+						<td><label style="text-align:center;width:8.5em">GRBC no</label></td>
+						<td style="padding:0px;">
+							<input  type='text' disabled="true" name="grbc_no" id="grbc_no" style="border:0px;width:8.5em"/>
+						</td>	
+					</tr>
+					<tr>
+						<td><label style="text-align:center;width:8.5em">Remarks</label></td>
+						<td rowspan="2" colspan="3">
+							<label style="text-align:center;width:5.5em">
+								##<input  type='text' disabled="true" name="remarks" id="remarks" style="border:0px;width:8.5em"/>
+								<textarea id="remarks" name="remarks" style="width:100%" >$cgi.escape($irv_data.get('remarks', ''),quote=True)</textarea>
+							</label>
+						</td>
+						<td></td>
+						<td></td>
+					</tr>
+				</table>
+				</div>
+			</td>											
+		</tr>
+	</table>
+</form>
+
+</div>
+
